@@ -19,21 +19,7 @@ spec:
         env:
         - name: PORT
           value: "8080"
-        livenessProbe:
-          grpc:
-            port: 8080
-          periodSeconds: 5
-        readinessProbe:
-          grpc:
-            port: 8080
-          periodSeconds: 5
-        resources:
-          requests: 
-            cpu: 100m
-            memory: 64Mi
-          limits:
-            cpu: 200m
-            memory: 128Mi
+        
 ---
 apiVersion: v1
 kind: Service
@@ -47,3 +33,160 @@ spec:
   - protocol: TCP
     port: 5000
     targetPort: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendationservice
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: recommendationservice
+  template:
+    metadata:
+      labels:
+        app: recommendationservice
+    spec:
+      containers:
+      - name: service
+        image: gcr.io/google-samples/microservices-demo/recommendationservice:v0.8.0
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PORT
+          value: "8080"
+        - name: PRODUCT_CATALOG_SERVICE_ADDR
+          value: "productcatalogservice:3550"
+     
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: recommendationservice
+spec:
+  type: ClusterIP
+  selector:
+    app: recommendationservice
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productcatalogservice
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: productcatalogservice
+  template:
+    metadata:
+      labels:
+        app: productcatalogservice
+    spec:
+      containers:
+      - name: service
+        image: gcr.io/google-samples/microservices-demo/productcatalogservice:v0.8.0
+        ports:
+        - containerPort: 3550
+        env:
+        - name: PORT
+          value: "3550"
+      
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: productcatalogservice
+spec:
+  type: ClusterIP
+  selector:
+    app: productcatalogservice
+  ports:
+  - protocol: TCP
+    port: 3550
+    targetPort: 3550
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paymentservice
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: paymentservice
+  template:
+    metadata:
+      labels:
+        app: paymentservice
+    spec:
+      containers:
+      - name: service
+        image: gcr.io/google-samples/microservices-demo/paymentservice:v0.8.0
+        ports:
+        - containerPort: 50051
+        env:
+        - name: PORT
+          value: "50051"
+      
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paymentservice
+spec:
+  type: ClusterIP
+  selector:
+    app: paymentservice
+  ports:
+  - protocol: TCP
+    port: 50051
+    targetPort: 50051
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: currencyservice
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: currencyservice
+  template:
+    metadata:
+      labels:
+        app: currencyservice
+    spec:
+      containers:
+      - name: service
+        image: gcr.io/google-samples/microservices-demo/currencyservice:v0.8.0
+        ports:
+        - containerPort: 7000
+        env:
+        - name: PORT
+          value: "7000"
+       
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: currencyservice
+spec:
+  type: ClusterIP
+  selector:
+    app: currencyservice
+  ports:
+  - protocol: TCP
+    port: 7000
+    targetPort: 7000
