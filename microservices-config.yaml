@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emailservice
+spec:
+  selector:
+    matchLabels:
+      app: emailservice
+  template:
+    metadata:
+      labels:
+        app: emailservice
+    spec:
+      containers:
+      - name: service
+        image: gcr.io/google-samples/microservices-demo/emailservice:v0.8.0
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PORT
+          value: "8080"
+        livenessProbe:
+          grpc:
+            port: 8080
+          periodSeconds: 5
+        readinessProbe:
+          grpc:
+            port: 8080
+          periodSeconds: 5
+        resources:
+          requests: 
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emailservice
+spec:
+  type: ClusterIP
+  selector:
+    app: emailservice
+  ports:
+  - protocol: TCP
+    port: 5000
+    targetPort: 8080
