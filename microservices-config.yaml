@@ -312,7 +312,21 @@ spec:
         env:
         - name: PORT
           value: "9555"
-       
+        livenessProbe:
+          grpc: 
+            port: 9555
+          periodSeconds: 5
+        readinessProbe:
+          grpc:
+            port: 9555
+          periodSeconds: 5
+        resources:
+          requests:
+            cpu: 200m
+            memory: 180Mi
+          limits:
+            cpu: 300m
+            memory: 300Mi
 
 ---
 apiVersion: v1
