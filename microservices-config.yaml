@@ -266,6 +266,14 @@ spec:
         env:
         - name: PORT
           value: "50051"
+        livenessProbe: 
+          grpc: 
+            port: 50051
+          periodSeconds: 5
+        readinessProbe:
+          grpc:
+            port: 50051
+          periodSeconds: 5
         
 ---
 apiVersion: v1
