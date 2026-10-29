@@ -544,6 +544,16 @@ spec:
           value: "checkoutservice:5050"
         - name: AD_SERVICE_ADDR
           value: "adservice:9555"
+        livenessProbe:
+          httpGet:
+            path: "/_healthz"
+            port: 8080
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: "/_healthz"
+            port: 8080
+          periodSeconds: 5
        
 
 ---
