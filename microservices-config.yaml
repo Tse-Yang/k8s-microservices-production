@@ -417,11 +417,13 @@ spec:
         - name: redis-data
           mountPath: /data
         livenessProbe:
-          grpc: 
+          initialDelaySeconds: 5
+          tcpSocket: 
             port: 6379
           periodSeconds: 5
         readinessProbe:
-          grpc:
+          initialDelaySeconds: 5
+          tcpSocket:
             port: 6379
           periodSeconds: 5
         resources:
@@ -524,7 +526,7 @@ spec:
     spec:
       containers:
       - name: service
-        image: gcr.io/google-samples/microservices-demo/frontend:v0.8.0
+        image: gcr.io/google-samples/microservices-demo/frontend:v0.10.7
         ports:
         - containerPort: 8080
         env:
