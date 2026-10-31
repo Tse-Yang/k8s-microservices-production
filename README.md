@@ -10,6 +10,8 @@ Kubernetes, Redis, Linux, Linode LKE
 
 The system is split into independent microservices that talk to each other over gRPC (the frontend serves HTTP to browsers). Only the `frontend` is reachable from outside the cluster; everything else uses internal `ClusterIP` services.
 
+![Microservices connection map](images/microservices_full_connection_map.svg)
+
 ```
 Browser
   │  HTTP :80
