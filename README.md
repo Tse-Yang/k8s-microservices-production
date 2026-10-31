@@ -71,7 +71,7 @@ kubectl create ns microservices
 Apply the unified configuration manifest:
 
 ```bash
-kubectl apply -f config.yaml -n microservices
+kubectl apply -f microservices-config.yaml -n microservices
 ```
 
 Check running pods and services:
