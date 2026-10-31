@@ -3,9 +3,10 @@ kind: Deployment
 metadata:
   name: emailservice
 spec:
+  replicas: 1
   selector:
     matchLabels:
-      app: emailservice 
+      app: emailservice
   template:
     metadata:
       labels:
@@ -19,22 +20,28 @@ spec:
         env:
         - name: PORT
           value: "8080"
+        - name: DISABLE_PROFILER
+          value: "1"
         livenessProbe:
           grpc:
             port: 8080
-          periodSeconds: 5
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
         readinessProbe:
           grpc:
             port: 8080
-          periodSeconds: 5
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
         resources:
-          requests: 
+          requests:
             cpu: 100m
             memory: 64Mi
           limits:
             cpu: 200m
             memory: 128Mi
-        
+
 ---
 apiVersion: v1
 kind: Service
@@ -79,12 +86,22 @@ spec:
         livenessProbe:
           grpc:
             port: 8080
-          periodSeconds: 5
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
         readinessProbe:
           grpc:
             port: 8080
-          periodSeconds: 5
-     
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+        resources:
+          requests:
+            cpu: 100m
+            memory: 220Mi
+          limits:
+            cpu: 200m
+            memory: 450Mi
 
 ---
 apiVersion: v1
@@ -127,10 +144,12 @@ spec:
           grpc:
             port: 3550
           periodSeconds: 5
+          timeoutSeconds: 3
         readinessProbe:
           grpc:
             port: 3550
-          periodSeconds: 5      
+          periodSeconds: 5
+          timeoutSeconds: 3
 
 ---
 apiVersion: v1
@@ -174,12 +193,16 @@ spec:
         livenessProbe:
           grpc:
             port: 50051
-          periodSeconds: 5
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
         readinessProbe:
           grpc:
             port: 50051
-          periodSeconds: 5
-      
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+
 ---
 apiVersion: v1
 kind: Service
@@ -222,12 +245,15 @@ spec:
         livenessProbe:
           grpc:
             port: 7000
-          periodSeconds: 5
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
         readinessProbe:
           grpc:
             port: 7000
-          periodSeconds: 5
-       
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
 
 ---
 apiVersion: v1
@@ -266,15 +292,17 @@ spec:
         env:
         - name: PORT
           value: "50051"
-        livenessProbe: 
-          grpc: 
+        livenessProbe:
+          grpc:
             port: 50051
           periodSeconds: 5
+          timeoutSeconds: 3
         readinessProbe:
           grpc:
             port: 50051
           periodSeconds: 5
-        
+          timeoutSeconds: 3
+
 ---
 apiVersion: v1
 kind: Service
@@ -312,21 +340,31 @@ spec:
         env:
         - name: PORT
           value: "9555"
-        livenessProbe:
-          grpc: 
-            port: 9555
-          periodSeconds: 5
-        readinessProbe:
+        # Holds off liveness/readiness until the JVM is up (up to ~150s)
+        startupProbe:
           grpc:
             port: 9555
           periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+        livenessProbe:
+          grpc:
+            port: 9555
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          grpc:
+            port: 9555
+          periodSeconds: 10
+          timeoutSeconds: 3
         resources:
           requests:
             cpu: 200m
             memory: 180Mi
           limits:
-            cpu: 300m
-            memory: 300Mi
+            cpu: 500m
+            memory: 512Mi
 
 ---
 apiVersion: v1
@@ -370,14 +408,17 @@ spec:
         - name: DISABLE_PROFILER
           value: "1"
         livenessProbe:
-          grpc: 
+          grpc:
             port: 7070
-          periodSeconds: 5
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
         readinessProbe:
           grpc:
             port: 7070
-          periodSeconds: 5
-      
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
 
 ---
 apiVersion: v1
@@ -399,7 +440,9 @@ kind: Deployment
 metadata:
   name: redis-cart
 spec:
-  replicas: 2
+  # Must be 1: two independent Redis instances behind one Service
+  # would give users inconsistent carts.
+  replicas: 1
   selector:
     matchLabels:
       app: redis-cart
@@ -418,7 +461,7 @@ spec:
           mountPath: /data
         livenessProbe:
           initialDelaySeconds: 5
-          tcpSocket: 
+          tcpSocket:
             port: 6379
           periodSeconds: 5
         readinessProbe:
@@ -427,7 +470,7 @@ spec:
             port: 6379
           periodSeconds: 5
         resources:
-          requests: 
+          requests:
             cpu: 70m
             memory: 200Mi
           limits:
@@ -436,6 +479,7 @@ spec:
       volumes:
       - name: redis-data
         emptyDir: {}
+
 ---
 apiVersion: v1
 kind: Service
@@ -489,12 +533,13 @@ spec:
           grpc:
             port: 5050
           periodSeconds: 5
+          timeoutSeconds: 3
         readinessProbe:
           grpc:
             port: 5050
           periodSeconds: 5
-     
-      
+          timeoutSeconds: 3
+
 ---
 apiVersion: v1
 kind: Service
@@ -546,17 +591,31 @@ spec:
           value: "checkoutservice:5050"
         - name: AD_SERVICE_ADDR
           value: "adservice:9555"
+        # Required by v0.10.5 at startup (app panics without it).
+        # The service itself is optional and not deployed here.
+        - name: SHOPPING_ASSISTANT_SERVICE_ADDR
+          value: "shoppingassistantservice:80"
         livenessProbe:
           httpGet:
             path: "/_healthz"
             port: 8080
+          initialDelaySeconds: 10
           periodSeconds: 5
+          timeoutSeconds: 3
         readinessProbe:
           httpGet:
             path: "/_healthz"
             port: 8080
+          initialDelaySeconds: 10
           periodSeconds: 5
-       
+          timeoutSeconds: 3
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
 
 ---
 apiVersion: v1
@@ -571,7 +630,4 @@ spec:
   - protocol: TCP
     port: 80
     targetPort: 8080
-    nodePort: 30007
-    
-
-
+    nodePort: 30008
