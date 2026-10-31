@@ -12,21 +12,6 @@ The system is split into independent microservices that talk to each other over 
 
 ![Microservices connection map](images/microservices_full_connection_map.svg)
 
-```
-Browser
-  │  HTTP :80
-  ▼
-frontend (LoadBalancer)
-  │  gRPC
-  ├──▶ productcatalogservice
-  ├──▶ currencyservice
-  ├──▶ cartservice ──▶ redis-cart
-  ├──▶ recommendationservice ──▶ productcatalogservice
-  ├──▶ shippingservice
-  ├──▶ checkoutservice ──▶ (catalog, shipping, payment, email, currency, cart)
-  └──▶ adservice
-```
-
 ### Services
 
 | Service | Port |
