@@ -83,7 +83,7 @@ kubectl get svc -n microservices
 
 ### 5. Access the Shop
 
-Wait until the `frontend` service shows an `EXTERNAL-IP`, then open `http://<EXTERNAL-IP>:30007` in your browser.
+Open `http://<IP>:30008` in your browser.
 
 ## Production & Security Best Practices
 
