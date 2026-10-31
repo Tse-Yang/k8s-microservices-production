@@ -57,6 +57,7 @@ Verify the connection:
 ```bash
 kubectl get nodes
 ```
+![Linodes cluster](images/nodes-ready.png)
 
 ### 3. Namespace Creation
 
@@ -73,6 +74,7 @@ Apply the unified configuration manifest:
 ```bash
 kubectl apply -f microservices-config.yaml -n microservices
 ```
+![Microservices](images/microservices.png)
 
 Check running pods and services:
 
@@ -80,10 +82,13 @@ Check running pods and services:
 kubectl get pods -n microservices
 kubectl get svc -n microservices
 ```
+![Microservices running](images/pods-and-services-running.png)
 
 ### 5. Access the Shop
 
 Open `http://<IP>:30008` in your browser.
+
+![Application available](images/app-accessible.png)
 
 ## Production & Security Best Practices
 
