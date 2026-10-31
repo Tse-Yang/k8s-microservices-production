@@ -1,93 +1,127 @@
-# k8s-microservices-production
+# Kubernetes Microservices Production
+
+A Kubernetes deployment of an online shop’s microservices on Linode Kubernetes Engine (LKE), with production and security best practices.
+
+## Technologies Used
+
+Kubernetes, Redis, Linux, Linode LKE
+
+## Architecture Overview
+
+The system is split into independent microservices that talk to each other over gRPC (the frontend serves HTTP to browsers). Only the `frontend` is reachable from outside the cluster; everything else uses internal `ClusterIP` services.
+
+![Microservices connection map](images/microservices_full_connection_map.svg)
+
+### Services
+
+| Service | Port |
+|---|---|
+| frontend | 80 (LoadBalancer) -> 8080 |
+| productcatalogservice | 3550 |
+| currencyservice | 7000 |
+| cartservice | 7070 |
+| recommendationservice | 8080 |
+| shippingservice | 50051 |
+| paymentservice | 50051 |
+| emailservice | 5000 -> 8080 |
+| checkoutservice | 5050 |
+| adservice | 9555 |
+| redis-cart | 6379 |
 
 
-
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## Repository Contents
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/Tseyang/k8s-microservices-production.git
-git branch -M main
-git push -uf origin main
+.
+├── config.yaml   # Deployments + Services for all microservices
+└── README.md
 ```
 
-## Integrate with your tools
+## Prerequisites & Setup
 
-* [Set up project integrations](https://gitlab.com/Tseyang/k8s-microservices-production/-/settings/integrations)
+### 1. Create the Cluster
 
-## Collaborate with your team
+In Linode, create an LKE cluster named `online-shop-microservices` in the region closest to you with 3 worker nodes (2 GB each). Install `kubectl` locally.
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+### 2. Cluster Connection & Security
 
-## Test and Deploy
+Download the cluster configuration file (`online-shop-microservices-kubeconfig.yaml`). It contains your cluster credentials, so store it securely and never commit it to Git. Restrict permissions before exporting the path:
 
-Use the built-in continuous integration in GitLab.
+```bash
+chmod 600 online-shop-microservices-kubeconfig.yaml
+export KUBECONFIG=/path/to/online-shop-microservices-kubeconfig.yaml
+```
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+Verify the connection:
 
-***
+```bash
+kubectl get nodes
+```
 
-# Editing this README
+### 3. Namespace Creation
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+Create a dedicated namespace to isolate workloads and manage permissions:
 
-## Suggestions for a good README
+```bash
+kubectl create ns microservices
+```
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### 4. Deploying the Application
 
-## Name
-Choose a self-explaining name for your project.
+Apply the unified configuration manifest:
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```bash
+kubectl apply -f config.yaml -n microservices
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Check running pods and services:
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+```bash
+kubectl get pods -n microservices
+kubectl get svc -n microservices
+```
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### 5. Access the Shop
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+Wait until the `frontend` service shows an `EXTERNAL-IP`, then open `http://<EXTERNAL-IP>` in your browser.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+## Production & Security Best Practices
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+These are the practices to aims for. 
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### Image Versioning
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+- **Pinned tags** specify explicit image versions (e.g. `:v0.10.7`) instead of `latest`, so deployments are reproducible and the running version is unambiguous.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+### Reliability & Health Probes
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+- **Liveness probes** check periodically whether a container is healthy; when a probe fails, Kubernetes restarts the container. `initialDelaySeconds` gives the app time to start before the first check.
+- **Readiness probes** determine when a container is ready to accept traffic. Without them, Kubernetes assumes a pod is ready as soon as the container starts.
+- **Probe types** are `grpc` for gRPC services, `httpGet` (`/_healthz`) for the frontend, and `tcpSocket` for Redis.
 
-## License
-For open source projects, say how it is licensed.
+### Resource Management
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- **Requests and limits** serve two roles: requests are the guaranteed resources used for scheduling, and limits are the ceiling that prevents noisy-neighbor problems. CPU requests stay at 1 core or below (1 CPU = 1000m), and Redis receives more memory and less CPU because it is memory-heavy.
+- **Node constraints** require that requests fit within the allocatable capacity of at least one worker node (which is lower than the node's advertised size, since the system reserves some); otherwise the pod can never be scheduled. Limits should also stay within what a node can realistically provide.
+
+### Networking & Security
+
+- **LoadBalancer and ClusterIP** provide a single external entry point through the cloud `LoadBalancer` (frontend), while internal services use `ClusterIP`. NodePort is avoided because it opens a port on every worker node.
+- **Non-root execution** keeps containers from running as root, which limits the damage if one is compromised; official images are preferred, and their runtime user should be verified.
+- **Image scanning** checks third-party and base images for vulnerabilities, both manually and automatically in CI/CD pipelines.
+- **Namespaces and labels** isolate workloads and allow privileges to be set per namespace (via RBAC), while labels make resources selectable and organized.
+- **Kubernetes upgrades** keep the cluster on a supported, recent version for security and bug fixes; nodes are upgraded one at a time so replicas keep the app available.
+
+### Replicas & High Availability
+
+- **Multiple replicas** prevent downtime when a pod crashes; the default of 1 replica would mean an outage, so most services run 2.
+- **Multiple worker nodes** prevent a single node's crash, reboot, or maintenance from taking everything down. Replicas should run on different nodes so pods can be rescheduled to healthy ones.
+
+
+## Clean Up
+
+```bash
+kubectl delete namespace microservices
+```
+
+Then delete the LKE cluster in Linode to stop billing.
